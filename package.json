@@ -1,0 +1,29 @@
+{
+  "name": "fh-app-art",
+  "version": "1.0.0",
+  "description": "Red Hat Mobile Aplication platform - Client Apps Acceptance & Regression Tests",
+  "scripts": {
+    "start": "mocha",
+    "prestart": "selenium-standalone install &>/dev/null && selenium-standalone start &>/dev/null &"
+  },
+  "author": "Jan Hellar <jhellar@redhat.com>",
+  "license": "ISC",
+  "dependencies": {
+    "chai": "^3.5.0",
+    "fh-fhc": "http://npm.skunkhenry.com/fh-fhc/-/fh-fhc-2.17.3-577.tgz",
+    "mocha": "^3.2.0",
+    "plist": "^2.0.1",
+    "promisify-node": "^0.4.0",
+    "rimraf": "^2.6.1",
+    "selenium-standalone": "^6.0.1",
+    "simple-git": "^1.66.0",
+    "webdriverio": "^4.6.2"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jhellar/fh-app-art.git"
+  },
+  "devDependencies": {
+    "eslint": "^3.16.1"
+  }
+}
