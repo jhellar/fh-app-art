@@ -29,7 +29,8 @@ class Template {
   }
 
   prepare() {
-    return git.clone(this.repoUrl, this.tempFolder, this.repoBranch)
+    return rimraf(this.tempFolder)
+      .then(() => (git.clone(this.repoUrl, this.tempFolder, this.repoBranch)))
       .then(() => {
         this.projectName = 'app-art-' + new Date().getTime();
         return fhc.projectCreate(this.projectName, this.projectTemplateId);
