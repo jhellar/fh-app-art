@@ -9,7 +9,7 @@ const config = require('../config');
 describe('UI tests for iOS client apps', function() {
 
   this.timeout(5 * 60 * 1000);
-  this.retries(2);
+  // this.retries(2);
 
   before(function() {
     const tempFolder = path.resolve(__dirname, '../temp');
@@ -24,9 +24,9 @@ describe('UI tests for iOS client apps', function() {
         return template.prepare();
       });
 
-      after(function() {
-        return template.cleanup();
-      });
+      // after(function() {
+      //   return template.cleanup();
+      // });
 
       it('should pass UI tests', function() {
         return template.test();

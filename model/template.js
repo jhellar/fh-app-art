@@ -20,6 +20,7 @@ class Template {
     this.fhconfigPath = fhconfigPath;
     this.xcworkspace = xcworkspace;
     this.scheme = scheme;
+    this.tempFolder = path.resolve(__dirname, '../temp');
 
     this.prepare = this.prepare.bind(this);
     this.test = this.test.bind(this);
@@ -27,7 +28,6 @@ class Template {
   }
 
   prepare() {
-    this.tempFolder = path.resolve(__dirname, '../temp');
     return git.clone(this.repoUrl, this.tempFolder, this.repoBranch)
       .then(() => {
         this.projectName = 'app-art-' + new Date().getTime();
@@ -57,7 +57,7 @@ class Template {
   }
 
   test() {
-    return exec(`xcodebuild test -workspace ${this.xcworkspace} -scheme ${this.scheme} -destination 'platform=${config.iosPlatform}'`,
+    return exec(`xcodebuild clean test -workspace ${this.xcworkspace} -scheme ${this.scheme} -destination 'platform=${config.iosPlatform}'`,
       this.tempFolder);
   }
 

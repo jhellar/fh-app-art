@@ -4,7 +4,7 @@
   "description": "Red Hat Mobile Aplication platform - Client Apps Acceptance & Regression Tests",
   "scripts": {
     "start": "mocha",
-    "prestart": "selenium-standalone install &>/dev/null && selenium-standalone start &>/dev/null &"
+    "prestart": "selenium-standalone install --version=3.2.0 --drivers.chrome.version=2.27 &>/dev/null && selenium-standalone start &>/dev/null &"
   },
   "author": "Jan Hellar <jhellar@redhat.com>",
   "license": "ISC",

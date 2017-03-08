@@ -11,6 +11,7 @@ const client = webdriverio.remote(options);
 const path = require('path');
 const plist = require('plist');
 const exec = require('../utils/exec');
+const Fastlane = require('../utils/fastlane');
 
 class PushTemplate extends Template {
 
@@ -18,6 +19,8 @@ class PushTemplate extends Template {
     super(name, repoUrl, repoBranch, projectTemplateId, fhconfigPath, xcworkspace, scheme);
 
     this.bundleId = bundleId;
+    console.log(this.tempFolder);
+    this.fastlane = new Fastlane(config.iosUsername, config.iosPushBundleId, config.iosPushDevelopment, this.tempFolder);
 
     this.prepare = this.prepare.bind(this);
     this.test = this.test.bind(this);
@@ -29,7 +32,15 @@ class PushTemplate extends Template {
   prepare() {
     return super.prepare()
       .then(() => (fs.readFile(`${this.tempFolder}/${this.scheme}.xcodeproj/project.pbxproj`, 'utf8')))
-      .then(pbxproj => (fs.writeFile(`${this.tempFolder}/${this.scheme}.xcodeproj/project.pbxproj`, pbxproj.split(this.bundleId).join(config.iosPushBundleId))))
+      .then(pbxproj => {
+        const replaced = pbxproj.split(this.bundleId).join(config.iosPushBundleId).split('org.aerogear.PushStarterUITests').join(config.iosPushBundleId);
+        return fs.writeFile(`${this.tempFolder}/${this.scheme}.xcodeproj/project.pbxproj`, replaced);
+      })
+      .then(() => (this.fastlane.produce(config.iosPushAppIDName)))
+      .then(() => (this.fastlane.pem(config.iosPushP12Password, 'fastlane')))
+      .then(() => (this.fastlane.sigh('fastlane.mobileprovision')))
+      .then(() => (this.fastlane.updateProvisioning(`${this.scheme}.xcodeproj`, 'fastlane.mobileprovision')))
+      .then(() => (exec(`sed -i '' 's/ProvisioningStyle = Automatic;/ProvisioningStyle = Manual;/' ${this.scheme}.xcodeproj/project.pbxproj`, this.tempFolder)))
       // .then(() => (git.add(`${this.scheme}.xcodeproj/project.pbxproj`, this.tempFolder)))
       // .then(() => (git.commit('Updated bundleId', this.tempFolder)))
       // .then(() => (git.addRemote('studio', this.clientApp.internallyHostedRepoUrl, this.tempFolder)))
@@ -51,7 +62,7 @@ class PushTemplate extends Template {
           .waitForVisible('.ups-variant-ios')
           .click('.ups-variant-ios')
           .waitForVisible('.ups-add-variable input[type="file"]')
-          .chooseFile('.ups-add-variable input[type="file"]', config.iosPushP12)
+          .chooseFile('.ups-add-variable input[type="file"]', path.resolve(this.tempFolder, 'fastlane.p12'))
           .waitForVisible('#iosType2')
           .click('#iosType2')
           .waitForVisible('#iosPassphrase')
@@ -98,7 +109,7 @@ class PushTemplate extends Template {
   }
 
   testOnRealDevice() {
-    return exec(`xcodebuild test -workspace ${this.xcworkspace} -scheme ${this.scheme} -destination 'id=${this.deviceId}' DEVELOPMENT_TEAM=${config.iosPushTeam}`,
+    return exec(`xcodebuild clean test -workspace ${this.xcworkspace} -scheme ${this.scheme} -destination 'id=${this.deviceId}' DEVELOPMENT_TEAM=${config.iosPushTeam}`,
       this.tempFolder);
   }
 
@@ -115,12 +126,19 @@ class PushTemplate extends Template {
       .waitForVisible('#login_button')
       .click('#login_button')
       .then(this.waitForDeviceRegistered)
+      .waitForVisible('#send-notification-btn')
+      .click('#send-notification-btn')
+      .pause(3000)
+      .waitForVisible('#pushAlert')
+      .setValue('#pushAlert', 'test')
+      .waitForVisible('#sendPush')
+      .click('#sendPush')
       .end();
   }
 
   waitForDeviceRegistered() {
     return client
-      .pause(2000)
+      .pause(4000)
       .refresh()
       .waitForVisible('#stat-device-count span.count')
       .getText('#stat-device-count span.count')
