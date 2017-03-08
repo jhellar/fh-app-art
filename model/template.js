@@ -12,13 +12,14 @@ const fs = promisify('fs');
 
 class Template {
 
-  constructor(name, repoUrl, repoBranch, projectTemplateId, fhconfigPath, xcworkspace, scheme) {
+  constructor(name, repoUrl, repoBranch, projectTemplateId, scheme) {
     this.name = name;
     this.repoUrl = repoUrl;
     this.repoBranch = repoBranch;
     this.projectTemplateId = projectTemplateId;
-    this.fhconfigPath = fhconfigPath;
-    this.xcworkspace = xcworkspace;
+    this.fhconfigPath = scheme + '/fhconfig.plist';
+    this.xcworkspace = scheme + '.xcworkspace';
+    this.xcodeproj = scheme + '.xcodeproj';
     this.scheme = scheme;
     this.tempFolder = path.resolve(__dirname, '../temp');
 

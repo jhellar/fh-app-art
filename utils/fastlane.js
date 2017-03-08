@@ -19,17 +19,14 @@ class Fastlane {
   }
 
   produce(name) {
-    console.log('produce');
     return exec(`fastlane produce -i -u ${this.username} -a ${this.bundleId} -q "${name}"`, this.folder);
   }
 
   pem(p12Password, output) {
-    console.log('pem ' + this.folder);
     return exec(`fastlane pem ${this.development} -u ${this.username} -a ${this.bundleId} -p "${p12Password}" -o ${output}`, this.folder);
   }
 
   sigh(output) {
-    console.log('sigh');
     return exec(`fastlane sigh ${this.development} --force -u ${this.username} -a ${this.bundleId} -q "${output}"`, this.folder);
   }
 

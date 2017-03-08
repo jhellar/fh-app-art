@@ -9,10 +9,9 @@ const templates = [
     'git@github.com:jhellar/pushstarter-ios-swift.git',
     'FH-3233',
     'pushstarter_project',
-    'PushStarter/fhconfig.plist',
-    'PushStarter.xcworkspace',
     'PushStarter',
-    'org.aerogear.helloworldpush'
+    'org.aerogear.helloworldpush',
+    'org.aerogear.PushStarterUITests'
   ),
   // new IOSTemplate(
   //   'Helloworld iOS Objective-C',

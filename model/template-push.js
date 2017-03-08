@@ -2,7 +2,6 @@
 
 const Template = require('./template.js');
 const config = require('../config');
-// const git = require('../utils/git');
 const promisify = require('promisify-node');
 const fs = promisify('fs');
 const webdriverio = require('webdriverio');
@@ -15,15 +14,20 @@ const Fastlane = require('../utils/fastlane');
 
 class PushTemplate extends Template {
 
-  constructor(name, repoUrl, repoBranch, projectTemplateId, fhconfigPath, xcworkspace, scheme, bundleId) {
-    super(name, repoUrl, repoBranch, projectTemplateId, fhconfigPath, xcworkspace, scheme);
+  constructor(name, repoUrl, repoBranch, projectTemplateId, scheme, bundleId, testBundleId) {
+    super(name, repoUrl, repoBranch, projectTemplateId, scheme);
 
     this.bundleId = bundleId;
-    console.log(this.tempFolder);
+    this.testBundleId = testBundleId;
+    this.pbxproj = this.xcodeproj + '/project.pbxproj';
     this.fastlane = new Fastlane(config.iosUsername, config.iosPushBundleId, config.iosPushDevelopment, this.tempFolder);
 
     this.prepare = this.prepare.bind(this);
     this.test = this.test.bind(this);
+    this.changeBundleId = this.changeBundleId.bind(this);
+    this.storeP12 = this.storeP12.bind(this);
+    this.enablePush = this.enablePush.bind(this);
+    this.updateFhconfig = this.updateFhconfig.bind(this);
     this.testOnRealDevice = this.testOnRealDevice.bind(this);
     this.sendPushNotification = this.sendPushNotification.bind(this);
     this.waitForDeviceRegistered = this.waitForDeviceRegistered.bind(this);
@@ -31,69 +35,86 @@ class PushTemplate extends Template {
 
   prepare() {
     return super.prepare()
-      .then(() => (fs.readFile(`${this.tempFolder}/${this.scheme}.xcodeproj/project.pbxproj`, 'utf8')))
-      .then(pbxproj => {
-        const replaced = pbxproj.split(this.bundleId).join(config.iosPushBundleId).split('org.aerogear.PushStarterUITests').join(config.iosPushBundleId);
-        return fs.writeFile(`${this.tempFolder}/${this.scheme}.xcodeproj/project.pbxproj`, replaced);
-      })
+      .then(this.changeBundleId)
       .then(() => (this.fastlane.produce(config.iosPushAppIDName)))
       .then(() => (this.fastlane.pem(config.iosPushP12Password, 'fastlane')))
+      .then(this.storeP12)
       .then(() => (this.fastlane.sigh('fastlane.mobileprovision')))
-      .then(() => (this.fastlane.updateProvisioning(`${this.scheme}.xcodeproj`, 'fastlane.mobileprovision')))
-      .then(() => (exec(`sed -i '' 's/ProvisioningStyle = Automatic;/ProvisioningStyle = Manual;/' ${this.scheme}.xcodeproj/project.pbxproj`, this.tempFolder)))
-      // .then(() => (git.add(`${this.scheme}.xcodeproj/project.pbxproj`, this.tempFolder)))
-      // .then(() => (git.commit('Updated bundleId', this.tempFolder)))
-      // .then(() => (git.addRemote('studio', this.clientApp.internallyHostedRepoUrl, this.tempFolder)))
-      // .then(() => (git.push('studio', 'master', this.tempFolder)))
-      .then(() => (
-        client
-          .init()
-          .setViewportSize({ width: 1024, height: 768 })
-          .timeouts('implicit', 10000)
-          .url(`${config.host}/#projects/${this.project.guid}/apps/${this.clientApp.guid}/push`)
-          .waitForVisible('#username')
-          .setValue('#username', config.username)
-          .waitForVisible('#password')
-          .setValue('#password', config.password)
-          .waitForVisible('#login_button')
-          .click('#login_button')
-          .waitForVisible('#ups-app-detail-root button')
-          .click('#ups-app-detail-root button')
-          .waitForVisible('.ups-variant-ios')
-          .click('.ups-variant-ios')
-          .waitForVisible('.ups-add-variable input[type="file"]')
-          .chooseFile('.ups-add-variable input[type="file"]', path.resolve(this.tempFolder, 'fastlane.p12'))
-          .waitForVisible('#iosType2')
-          .click('#iosType2')
-          .waitForVisible('#iosPassphrase')
-          .setValue('#iosPassphrase', config.iosPushP12Password)
-          .waitForVisible('#enablePush')
-          .click('#enablePush')
-          .waitForVisible('.variant-id')
-          .getText('.variant-id')
-          .then(variantId => {
-            this.pushVariantId = variantId;
-          })
-          .waitForVisible('.variant-secret')
-          .getText('.variant-secret')
-          .then(variantSecret => {
-            this.pushVariantSecret = variantSecret.split('\n')[0];
-          })
-          .end()
-      ))
-      .then(() => {
-        const fhconfig = {
-          'host': config.host,
-          'appid': this.connection.clientApp,
-          'projectid': this.project.guid,
-          'appkey': this.clientApp.apiKey,
-          'connectiontag': this.connection.tag,
-          'variantID': this.pushVariantId,
-          'variantSecret': this.pushVariantSecret
-        };
-        const fhconfigPath = path.resolve(this.tempFolder, this.fhconfigPath);
-        return fs.writeFile(fhconfigPath, plist.build(fhconfig));
+      .then(() => (this.fastlane.updateProvisioning(this.xcodeproj, 'fastlane.mobileprovision')))
+      .then(() => (exec(`sed -i '' 's/ProvisioningStyle = Automatic;/ProvisioningStyle = Manual;/' ${this.pbxproj}`, this.tempFolder)))
+      .then(this.enablePush)
+      .then(this.updateFhconfig);
+  }
+
+  changeBundleId() {
+    return fs.readFile(path.resolve(this.tempFolder, this.pbxproj), 'utf8')
+      .then(pbxproj => {
+        const replaced = pbxproj.split(this.bundleId).join(config.iosPushBundleId).split(this.testBundleId).join(config.iosPushBundleId);
+        return fs.writeFile(path.resolve(this.tempFolder, this.pbxproj), replaced);
       });
+  }
+
+  storeP12() {
+    const p12new = path.resolve(this.tempFolder, 'fastlane.p12');
+    const p12fixtures = path.resolve(__dirname, '../fixtures/fastlane.p12');
+    const fsCb = require('fs');
+    if (fsCb.existsSync(p12new)) {
+      if (fsCb.existsSync(p12fixtures)) {
+        fsCb.unlinkSync(p12fixtures);
+      }
+      return fs.rename(p12new, p12fixtures);
+    }
+  }
+
+  enablePush() {
+    return client
+      .init()
+      .setViewportSize({ width: 1024, height: 768 })
+      .timeouts('implicit', 10000)
+      .url(`${config.host}/#projects/${this.project.guid}/apps/${this.clientApp.guid}/push`)
+      .waitForVisible('#username')
+      .setValue('#username', config.username)
+      .waitForVisible('#password')
+      .setValue('#password', config.password)
+      .waitForVisible('#login_button')
+      .click('#login_button')
+      .waitForVisible('#ups-app-detail-root button')
+      .click('#ups-app-detail-root button')
+      .waitForVisible('.ups-variant-ios')
+      .click('.ups-variant-ios')
+      .waitForVisible('.ups-add-variable input[type="file"]')
+      .chooseFile('.ups-add-variable input[type="file"]', path.resolve(__dirname, '../fixtures/fastlane.p12'))
+      .waitForVisible('#iosType2')
+      .click('#iosType2')
+      .waitForVisible('#iosPassphrase')
+      .setValue('#iosPassphrase', config.iosPushP12Password)
+      .waitForVisible('#enablePush')
+      .click('#enablePush')
+      .waitForVisible('.variant-id')
+      .getText('.variant-id')
+      .then(variantId => {
+        this.pushVariantId = variantId;
+      })
+      .waitForVisible('.variant-secret')
+      .getText('.variant-secret')
+      .then(variantSecret => {
+        this.pushVariantSecret = variantSecret.split('\n')[0];
+      })
+      .end();
+  }
+
+  updateFhconfig() {
+    const fhconfig = {
+      'host': config.host,
+      'appid': this.connection.clientApp,
+      'projectid': this.project.guid,
+      'appkey': this.clientApp.apiKey,
+      'connectiontag': this.connection.tag,
+      'variantID': this.pushVariantId,
+      'variantSecret': this.pushVariantSecret
+    };
+    const fhconfigPath = path.resolve(this.tempFolder, this.fhconfigPath);
+    return fs.writeFile(fhconfigPath, plist.build(fhconfig));
   }
 
   test() {
