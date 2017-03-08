@@ -36,3 +36,14 @@ For iOS push testing:
 If there is an error during "before" phase of push template testing, probably there is an issue with fastlane pem. Go to [provisioning portal](https://developer.apple.com/account/overview.action) and revoke Push certificates for AppID you specified in config.json.
 
 If there is an issue during actual testing, reconnect your device.
+
+## TODO
+
+* rewrite iOS UI tests
+  * wait for elements visible instead of sleep
+  * proper name for test
+  * decide what to do when fhconfig.plist is not populated with correct values
+* marge iOS UI tests
+* rest of iOS apps: Sync, Push Obj-C, SAML
+* Android testing
+* Cordova testing
