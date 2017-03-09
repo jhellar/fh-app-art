@@ -16,9 +16,9 @@ iOS tests are written with XCTest. Testing of these apps is currently automated:
 For iOS:
 * Mac
 * Xcode
-* Apple Developer Program account
 
 For iOS push testing:
+* Apple Developer Program account
 * physical device connect to your Mac
 * [fastlane tools](https://github.com/fastlane/fastlane)
 * credentials added to [fastlane CredentialsManager](https://github.com/fastlane/fastlane/tree/master/credentials_manager)
