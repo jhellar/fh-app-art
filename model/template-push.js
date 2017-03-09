@@ -11,6 +11,7 @@ const path = require('path');
 const plist = require('plist');
 const exec = require('../utils/exec');
 const Fastlane = require('../utils/fastlane');
+const fhc = require('../utils/fhc');
 
 class PushTemplate extends Template {
 
@@ -21,6 +22,8 @@ class PushTemplate extends Template {
     this.testBundleId = testBundleId;
     this.pbxproj = this.xcodeproj + '/project.pbxproj';
     this.fastlane = new Fastlane(config.iosUsername, config.iosPushBundleId, config.iosPushDevelopment, this.tempFolder);
+    this.push = true;
+    this.pushRegDevices = 0;
 
     this.prepare = this.prepare.bind(this);
     this.test = this.test.bind(this);
@@ -31,6 +34,7 @@ class PushTemplate extends Template {
     this.testOnRealDevice = this.testOnRealDevice.bind(this);
     this.sendPushNotification = this.sendPushNotification.bind(this);
     this.waitForDeviceRegistered = this.waitForDeviceRegistered.bind(this);
+    this.cleanup = this.cleanup.bind(this);
   }
 
   prepare() {
@@ -79,17 +83,30 @@ class PushTemplate extends Template {
       .waitForVisible('#login_button')
       .click('#login_button')
       .waitForVisible('#ups-app-detail-root button')
-      .click('#ups-app-detail-root button')
-      .waitForVisible('.ups-variant-ios')
-      .click('.ups-variant-ios')
-      .waitForVisible('.ups-add-variable input[type="file"]')
-      .chooseFile('.ups-add-variable input[type="file"]', path.resolve(__dirname, '../fixtures/fastlane.p12'))
-      .waitForVisible('#iosType2')
-      .click('#iosType2')
-      .waitForVisible('#iosPassphrase')
-      .setValue('#iosPassphrase', config.iosPushP12Password)
-      .waitForVisible('#enablePush')
-      .click('#enablePush')
+      .isVisible('#add-variant-btn')
+      .then(visible => {
+        if (visible) {
+          return client
+            .waitForVisible('#stat-device-count span.count')
+            .getText('#stat-device-count span.count')
+            .then(regDevices => {
+              this.pushRegDevices = Number(regDevices);
+            });
+        } else {
+          return client
+            .click('#ups-app-detail-root button')
+            .waitForVisible('.ups-variant-ios')
+            .click('.ups-variant-ios')
+            .waitForVisible('.ups-add-variable input[type="file"]')
+            .chooseFile('.ups-add-variable input[type="file"]', path.resolve(__dirname, '../fixtures/fastlane.p12'))
+            .waitForVisible('#iosType2')
+            .click('#iosType2')
+            .waitForVisible('#iosPassphrase')
+            .setValue('#iosPassphrase', config.iosPushP12Password)
+            .waitForVisible('#enablePush')
+            .click('#enablePush');
+        }
+      })
       .waitForVisible('.variant-id')
       .getText('.variant-id')
       .then(variantId => {
@@ -164,10 +181,14 @@ class PushTemplate extends Template {
       .waitForVisible('#stat-device-count span.count')
       .getText('#stat-device-count span.count')
       .then(numReg => {
-        if (numReg === '0') {
+        if (Number(numReg) <= this.pushRegDevices) {
           return this.waitForDeviceRegistered();
         }
       });
+  }
+
+  cleanup() {
+    return fhc.projectDelete(this.project.guid);
   }
 
 }

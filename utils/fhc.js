@@ -130,6 +130,18 @@ function projectsListNoApps() {
   });
 }
 
+function projectRead(guid) {
+  return new Promise(function(resolve, reject) {
+    fh.projects({_:['read', guid]}, function(err, result) {
+      if (err) {
+        return reject(err);
+      }
+
+      resolve(result);
+    });
+  });
+}
+
 function projectCreate(name, templateId) {
   return new Promise(function(resolve, reject) {
     fh.projects({_:['create', name, templateId]}, function(err, result) {
@@ -176,6 +188,7 @@ module.exports = {
   policyDelete: policyDelete,
   projectsList: projectsList,
   projectsListNoApps: projectsListNoApps,
+  projectRead: projectRead,
   projectCreate: projectCreate,
   projectDelete: projectDelete,
   secureEndpoints: secureEndpoints

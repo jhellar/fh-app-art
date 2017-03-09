@@ -36,10 +36,17 @@ class Template {
   prepare() {
     return rimraf(this.tempFolder)
       .then(() => (git.clone(this.repoUrl, this.tempFolder, this.repoBranch)))
-      .then(fhc.projectsList)
+      .then(fhc.projectsListNoApps)
       .then(this.prepareProject)
       .then(() => (fhc.connectionsList(this.project.guid)))
-      .then(connections => (fhc.connectionUpdate(this.project.guid, connections[0].guid, this.cloudApp.guid, config.environment)))
+      .then(connections => (
+        fhc.connectionUpdate(
+          this.project.guid,
+          this.push ? connections.find(conn => (conn.destination === 'ios')).guid : connections[0].guid,
+          this.cloudApp.guid,
+          config.environment
+        )
+      ))
       .then(connection => {
         this.connection = connection;
         this.clientApp = this.project.apps.find(app => (app.guid === connection.clientApp));
@@ -60,28 +67,34 @@ class Template {
     const matchingProjects = projects.filter(project => {
       const templateMatch = project.jsonTemplateId === this.projectTemplateId;
       const prefixMatch = project.title.startsWith(config.prefix);
-      const cloudApp = project.apps.find(app => (app.type === 'cloud_nodejs'));
-      return templateMatch && prefixMatch && cloudApp;
+      return templateMatch && prefixMatch;
     });
-    if (matchingProjects.length === 0) {
+    if (matchingProjects.length === 0 || this.push) {
       return this.createProject()
         .then(this.deployCloudApp);
     }
-    const runningProj = matchingProjects.find(project => {
-      const cloudApp = project.apps.find(app => (app.type === 'cloud_nodejs'));
-      for (const env in cloudApp.runtime) {
-        if (cloudApp.runtime.hasOwnProperty(env) && cloudApp.runtime[env]) {
-          this.environment = env;
+    return matchingProjects.reduce((p, proj) => (
+      p.then(() => (fhc.projectRead(proj.guid).then(full => {
+        proj.apps = full.apps;
+      })))
+    ), Promise.resolve())
+      .then(() => {
+        const runningProj = matchingProjects.find(project => {
+          const cloudApp = project.apps.find(app => (app.type === 'cloud_nodejs'));
+          for (const env in cloudApp.runtime) {
+            if (cloudApp.runtime.hasOwnProperty(env) && cloudApp.runtime[env]) {
+              this.environment = env;
+            }
+          }
+          return this.environment;
+        });
+        if (!runningProj) {
+          this.project = matchingProjects[0];
+          return this.deployCloudApp();
         }
-      }
-      return this.environment;
-    });
-    if (!runningProj) {
-      this.project = matchingProjects[0];
-      return this.deployCloudApp();
-    }
-    this.cloudApp = runningProj.apps.find(app => (app.type === 'cloud_nodejs'));
-    this.project = runningProj;
+        this.cloudApp = runningProj.apps.find(app => (app.type === 'cloud_nodejs'));
+        this.project = runningProj;
+      });
   }
 
   createProject() {
