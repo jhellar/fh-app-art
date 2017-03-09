@@ -132,13 +132,17 @@ function projectsListNoApps() {
 
 function projectRead(guid) {
   return new Promise(function(resolve, reject) {
-    fh.projects({_:['read', guid]}, function(err, result) {
-      if (err) {
-        return reject(err);
-      }
+    try {
+      fh.projects({_:['read', guid]}, function(err, result) {
+        if (err) {
+          return reject(err);
+        }
 
-      resolve(result);
-    });
+        resolve(result);
+      });
+    } catch (error) {
+      reject(error);
+    }
   });
 }
 
