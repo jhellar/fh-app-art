@@ -22,8 +22,13 @@ class Template {
     this.xcodeproj = scheme + '.xcodeproj';
     this.scheme = scheme;
     this.tempFolder = path.resolve(__dirname, '../temp');
+    this.projCreateTries = 0;
+    this.cloudDeployTries = 0;
 
     this.prepare = this.prepare.bind(this);
+    this.prepareProject = this.prepareProject.bind(this);
+    this.createProject = this.createProject.bind(this);
+    this.deployCloudApp = this.deployCloudApp.bind(this);
     this.test = this.test.bind(this);
     this.cleanup = this.cleanup.bind(this);
   }
@@ -31,17 +36,10 @@ class Template {
   prepare() {
     return rimraf(this.tempFolder)
       .then(() => (git.clone(this.repoUrl, this.tempFolder, this.repoBranch)))
-      .then(() => {
-        this.projectName = 'app-art-' + new Date().getTime();
-        return fhc.projectCreate(this.projectName, this.projectTemplateId);
-      })
-      .then(project => {
-        this.project = project;
-        this.cloudApp = project.apps.find(app => (app.type === 'cloud_nodejs'));
-        return fhc.appDeploy(this.cloudApp.guid, config.environment);
-      })
+      .then(fhc.projectsList)
+      .then(this.prepareProject)
       .then(() => (fhc.connectionsList(this.project.guid)))
-      .then(connections => (fhc.connectionUpdate(this.project.guid, connections.find(conn => (conn.destination === 'ios')).guid, this.cloudApp.guid, config.environment)))
+      .then(connections => (fhc.connectionUpdate(this.project.guid, connections[0].guid, this.cloudApp.guid, config.environment)))
       .then(connection => {
         this.connection = connection;
         this.clientApp = this.project.apps.find(app => (app.guid === connection.clientApp));
@@ -55,7 +53,71 @@ class Template {
         const fhconfigPath = path.resolve(this.tempFolder, this.fhconfigPath);
         return fs.writeFile(fhconfigPath, plist.build(fhconfig));
       })
-      .then(() => (exec('pod install', this.tempFolder )));
+      .then(() => (exec('pod install', this.tempFolder)));
+  }
+
+  prepareProject(projects) {
+    const matchingProjects = projects.filter(project => {
+      const templateMatch = project.jsonTemplateId === this.projectTemplateId;
+      const prefixMatch = project.title.startsWith(config.prefix);
+      const cloudApp = project.apps.find(app => (app.type === 'cloud_nodejs'));
+      return templateMatch && prefixMatch && cloudApp;
+    });
+    if (matchingProjects.length === 0) {
+      return this.createProject()
+        .then(this.deployCloudApp);
+    }
+    const runningProj = matchingProjects.find(project => {
+      const cloudApp = project.apps.find(app => (app.type === 'cloud_nodejs'));
+      for (const env in cloudApp.runtime) {
+        if (cloudApp.runtime.hasOwnProperty(env) && cloudApp.runtime[env]) {
+          this.environment = env;
+        }
+      }
+      return this.environment;
+    });
+    if (!runningProj) {
+      this.project = matchingProjects[0];
+      return this.deployCloudApp();
+    }
+    this.cloudApp = runningProj.apps.find(app => (app.type === 'cloud_nodejs'));
+    this.project = runningProj;
+  }
+
+  createProject() {
+    if (this.projCreateTries >= config.retries) {
+      throw new Error('Can not create project');
+    }
+    this.projCreateTries += 1;
+    this.projectName = config.prefix + new Date().getTime();
+    return fhc.projectCreate(this.projectName, this.projectTemplateId)
+      .then(project => {
+        this.project = project;
+      })
+      .catch(console.error)
+      .then(() => {
+        if (!this.project) {
+          return this.createProject();
+        }
+      });
+  }
+
+  deployCloudApp() {
+    if (this.cloudDeployTries >= config.retries) {
+      throw new Error('Can not deploy cloud app');
+    }
+    this.cloudDeployTries += 1;
+    this.cloudApp = this.project.apps.find(app => (app.type === 'cloud_nodejs'));
+    return fhc.appDeploy(this.cloudApp.guid, config.environment)
+      .then(() => {
+        this.cloudDeployed = true;
+      })
+      .catch(console.error)
+      .then(() => {
+        if (!this.cloudDeployed) {
+          return this.deployCloudApp();
+        }
+      });
   }
 
   test() {
@@ -64,9 +126,7 @@ class Template {
   }
 
   cleanup() {
-    return fhc.projectDelete(this.project.guid)
-      .catch(console.error)
-      .then(() => (rimraf(this.tempFolder)));
+    return Promise.resolve();
   }
 
 }

@@ -106,6 +106,30 @@ function policyDelete(guid) {
   });
 }
 
+function projectsList() {
+  return new Promise((resolve, reject) => {
+    fh.projects({_:['list']}, (err, result) => {
+      if (err) {
+        return reject(err);
+      }
+
+      resolve(result);
+    });
+  });
+}
+
+function projectsListNoApps() {
+  return new Promise((resolve, reject) => {
+    fh.call({_:['/box/api/projects?apps=false']}, (err, result) => {
+      if (err) {
+        return reject(err);
+      }
+
+      resolve(result);
+    });
+  });
+}
+
 function projectCreate(name, templateId) {
   return new Promise(function(resolve, reject) {
     fh.projects({_:['create', name, templateId]}, function(err, result) {
@@ -150,6 +174,8 @@ module.exports = {
   connectionsList: connectionsList,
   policyCreate: policyCreate,
   policyDelete: policyDelete,
+  projectsList: projectsList,
+  projectsListNoApps: projectsListNoApps,
   projectCreate: projectCreate,
   projectDelete: projectDelete,
   secureEndpoints: secureEndpoints
