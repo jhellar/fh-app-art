@@ -33,11 +33,11 @@ For iOS push testing:
 
 ### Error during "before" phase
 
-As creation of projects and deployment of apps using fh-fhc is not very stable, it can fail. Tool tries to reuse existing projects. If it won't find any it will try to create it. With retries option in config.js you can specify how many times it should try to create project / deploy app. Another option is to create the projects (and deploy cloud apps) manually in studio. Just name it with prefix you've set in config.js.
+As creation of projects and deployment of apps using fh-fhc is not very stable, it can fail. Tool tries to reuse existing projects. If it won't find any it will try to create it. With retries option in config.js you can specify how many times it should try to create project / deploy app. Another option is to create the projects (and deploy cloud apps) manually in studio. Just give it a name with prefix you've set in config.js.
 
 ### iOS push
 
-If there is an error during "before" phase of push template testing, probably there is an issue with fastlane pem. Go to [provisioning portal](https://developer.apple.com/account/overview.action) and revoke Push certificates for AppID you specified in config.json.
+If there is an error during "before" phase of push template testing, there are probably two possible scenarios. Project was not created - just re-run the tests. There is an issue with fastlane pem. Go to [provisioning portal](https://developer.apple.com/account/overview.action) and revoke Push certificates for AppID you specified in config.json.
 
 If there is an issue during actual testing, reconnect your device.
 
