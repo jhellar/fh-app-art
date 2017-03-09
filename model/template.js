@@ -69,7 +69,7 @@ class Template {
       const prefixMatch = project.title.startsWith(config.prefix);
       return templateMatch && prefixMatch;
     });
-    if (matchingProjects.length === 0 || this.push) {
+    if (matchingProjects.length === 0) {
       return this.createProject()
         .then(this.deployCloudApp);
     }

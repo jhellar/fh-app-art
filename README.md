@@ -37,7 +37,7 @@ As creation of projects and deployment of apps using fh-fhc is not very stable, 
 
 ### iOS push
 
-If there is an error during "before" phase of push template testing, there are probably two possible scenarios. Project was not created - just re-run the tests. There is an issue with fastlane pem. Go to [provisioning portal](https://developer.apple.com/account/overview.action) and revoke Push certificates for AppID you specified in config.json.
+If there is an error during "before" phase of push template testing, there is probably an issue with fastlane pem. Go to [provisioning portal](https://developer.apple.com/account/overview.action) and revoke Push certificates for AppID you specified in config.json.
 
 If there is an issue during actual testing, reconnect your device.
 

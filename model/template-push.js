@@ -11,7 +11,7 @@ const path = require('path');
 const plist = require('plist');
 const exec = require('../utils/exec');
 const Fastlane = require('../utils/fastlane');
-const fhc = require('../utils/fhc');
+// const fhc = require('../utils/fhc');
 
 class PushTemplate extends Template {
 
@@ -30,11 +30,11 @@ class PushTemplate extends Template {
     this.changeBundleId = this.changeBundleId.bind(this);
     this.storeP12 = this.storeP12.bind(this);
     this.enablePush = this.enablePush.bind(this);
+    this.setupPush = this.setupPush.bind(this);
     this.updateFhconfig = this.updateFhconfig.bind(this);
     this.testOnRealDevice = this.testOnRealDevice.bind(this);
     this.sendPushNotification = this.sendPushNotification.bind(this);
     this.waitForDeviceRegistered = this.waitForDeviceRegistered.bind(this);
-    this.cleanup = this.cleanup.bind(this);
   }
 
   prepare() {
@@ -87,22 +87,29 @@ class PushTemplate extends Template {
       .then(visible => {
         if (visible) {
           return client
-            .waitForVisible('#stat-device-count span.count')
-            .getText('#stat-device-count span.count')
-            .then(regDevices => {
-              this.pushRegDevices = Number(regDevices);
-            });
+            .waitForVisible('.ups-variant-header')
+            .moveToObject('.ups-variant-header')
+            .waitForVisible('.ups-variant-header .actions .danger a')
+            .click('.ups-variant-header .actions .danger a')
+            .pause(3000)
+            .waitForVisible('input[ng-model="confirmVariantName"]')
+            .setValue('input[ng-model="confirmVariantName"]', 'ios')
+            .waitForVisible('.modal-dialog button[type="submit"]')
+            .click('.modal-dialog button[type="submit"]')
+            .pause(3000)
+            .waitForVisible('#add-variant-btn')
+            .click('#add-variant-btn')
+            .pause(3000)
+            .waitForVisible('#textInput-modal-markup')
+            .setValue('#textInput-modal-markup', 'ios')
+            .then(this.setupPush)
+            .waitForVisible('.modal-footer button.btn-primary')
+            .click('.modal-footer button.btn-primary')
+            .pause(3000);
         } else {
           return client
             .click('#ups-app-detail-root button')
-            .waitForVisible('.ups-variant-ios')
-            .click('.ups-variant-ios')
-            .waitForVisible('.ups-add-variable input[type="file"]')
-            .chooseFile('.ups-add-variable input[type="file"]', path.resolve(__dirname, '../fixtures/fastlane.p12'))
-            .waitForVisible('#iosType2')
-            .click('#iosType2')
-            .waitForVisible('#iosPassphrase')
-            .setValue('#iosPassphrase', config.iosPushP12Password)
+            .then(this.setupPush)
             .waitForVisible('#enablePush')
             .click('#enablePush');
         }
@@ -118,6 +125,18 @@ class PushTemplate extends Template {
         this.pushVariantSecret = variantSecret.split('\n')[0];
       })
       .end();
+  }
+
+  setupPush() {
+    return client
+      .waitForVisible('.ups-variant-ios')
+      .click('.ups-variant-ios')
+      .waitForVisible('.ups-add-variable input[type="file"]')
+      .chooseFile('.ups-add-variable input[type="file"]', path.resolve(__dirname, '../fixtures/fastlane.p12'))
+      .waitForVisible('#iosType2')
+      .click('#iosType2')
+      .waitForVisible('#iosPassphrase')
+      .setValue('#iosPassphrase', config.iosPushP12Password);
   }
 
   updateFhconfig() {
@@ -185,10 +204,6 @@ class PushTemplate extends Template {
           return this.waitForDeviceRegistered();
         }
       });
-  }
-
-  cleanup() {
-    return fhc.projectDelete(this.project.guid);
   }
 
 }
