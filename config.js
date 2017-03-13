@@ -4,6 +4,8 @@ module.exports = {
   host: '',
   username: '',
   password: '',
+  prefix: 'app-art-',
+  retries: 3,
   environment: '',
   iosPlatform: 'iOS Simulator,name=iPhone 7',
   iosUsername: '',
@@ -11,5 +13,11 @@ module.exports = {
   iosPushP12Password: '',
   iosPushTeam: '',
   iosPushAppIDName: '',
-  iosPushDevelopment: true
+  iosPushDevelopment: true,
+  samlHost: '',
+  samlUsername:'',
+  samlPassword: '',
+  samlEntryPoint: '',
+  samlAuthContext: '',
+  samlCert: ''
 };

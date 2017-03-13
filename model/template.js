@@ -44,7 +44,7 @@ class Template {
           this.project.guid,
           this.push ? connections.find(conn => (conn.destination === 'ios')).guid : connections[0].guid,
           this.cloudApp.guid,
-          config.environment
+          this.environment
         )
       ))
       .then(connection => {
@@ -70,6 +70,7 @@ class Template {
       return templateMatch && prefixMatch;
     });
     if (matchingProjects.length === 0) {
+      this.environment = config.environment;
       return this.createProject()
         .then(this.deployCloudApp);
     }
@@ -89,11 +90,14 @@ class Template {
           return this.environment;
         });
         if (!runningProj) {
+          this.environment = config.environment;
           this.project = matchingProjects[0];
+          this.projectName = this.project.title;
           return this.deployCloudApp();
         }
         this.cloudApp = runningProj.apps.find(app => (app.type === 'cloud_nodejs'));
         this.project = runningProj;
+        this.projectName = this.project.title;
       });
   }
 
@@ -121,7 +125,7 @@ class Template {
     }
     this.cloudDeployTries += 1;
     this.cloudApp = this.project.apps.find(app => (app.type === 'cloud_nodejs'));
-    return fhc.appDeploy(this.cloudApp.guid, config.environment)
+    return fhc.appDeploy(this.cloudApp.guid, this.environment)
       .then(() => {
         this.cloudDeployed = true;
       })

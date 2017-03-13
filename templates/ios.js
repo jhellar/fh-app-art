@@ -2,8 +2,16 @@
 
 const IOSTemplate = require('../model/template');
 const PushTemplate = require('../model/template-push');
+const SAMLTemplate = require('../model/template-saml');
 
 const templates = [
+  new SAMLTemplate(
+    'SAML iOS Swift',
+    'git@github.com:jhellar/saml-ios-swift.git',
+    'FH-3251',
+    'saml_project',
+    'saml-ios-swift'
+  ),
   new PushTemplate(
     'Push Starter iOS Swift',
     'git@github.com:jhellar/pushstarter-ios-swift.git',

@@ -11,7 +11,7 @@ const path = require('path');
 const plist = require('plist');
 const exec = require('../utils/exec');
 const Fastlane = require('../utils/fastlane');
-// const fhc = require('../utils/fhc');
+const studio = require('../utils/studio');
 
 class PushTemplate extends Template {
 
@@ -71,17 +71,9 @@ class PushTemplate extends Template {
   }
 
   enablePush() {
-    return client
-      .init()
-      .setViewportSize({ width: 1024, height: 768 })
-      .timeouts('implicit', 10000)
+    return studio.init(client)
       .url(`${config.host}/#projects/${this.project.guid}/apps/${this.clientApp.guid}/push`)
-      .waitForVisible('#username')
-      .setValue('#username', config.username)
-      .waitForVisible('#password')
-      .setValue('#password', config.password)
-      .waitForVisible('#login_button')
-      .click('#login_button')
+      .then(() => (studio.login(client, config.username, config.password)))
       .waitForVisible('#ups-app-detail-root button')
       .isVisible('#add-variant-btn')
       .then(visible => {
@@ -171,17 +163,9 @@ class PushTemplate extends Template {
   }
 
   sendPushNotification() {
-    return client
-      .init()
-      .setViewportSize({ width: 1024, height: 768 })
-      .timeouts('implicit', 10000)
+    return studio.init(client)
       .url(`${config.host}/#projects/${this.project.guid}/apps/${this.clientApp.guid}/push`)
-      .waitForVisible('#username')
-      .setValue('#username', config.username)
-      .waitForVisible('#password')
-      .setValue('#password', config.password)
-      .waitForVisible('#login_button')
-      .click('#login_button')
+      .then(() => (studio.login(client, config.username, config.password)))
       .then(this.waitForDeviceRegistered)
       .waitForVisible('#send-notification-btn')
       .click('#send-notification-btn')

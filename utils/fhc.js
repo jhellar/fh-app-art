@@ -182,6 +182,42 @@ function secureEndpoints(appGuid, security, env) {
   });
 }
 
+function environmentRead(id) {
+  return new Promise(function(resolve, reject) {
+    fh.admin.environments.read({id: id}, function(error, res) {
+      if (error) {
+        return reject(error);
+      }
+
+      resolve(res);
+    });
+  });
+}
+
+function serviceCreate(name, templateId) {
+  return new Promise(function(resolve, reject) {
+    fh.services({_:['create', name, templateId]}, function(error, res) {
+      if (error) {
+        return reject(error);
+      }
+
+      resolve(res);
+    });
+  });
+}
+
+function servicesList() {
+  return new Promise(function(resolve, reject) {
+    fh.services({_:['list']}, function(error, res) {
+      if (error) {
+        return reject(error);
+      }
+
+      resolve(res);
+    });
+  });
+}
+
 module.exports = {
   init: init,
   appDeploy: appDeploy,
@@ -195,5 +231,8 @@ module.exports = {
   projectRead: projectRead,
   projectCreate: projectCreate,
   projectDelete: projectDelete,
-  secureEndpoints: secureEndpoints
+  secureEndpoints: secureEndpoints,
+  environmentRead: environmentRead,
+  serviceCreate: serviceCreate,
+  servicesList: servicesList
 };
