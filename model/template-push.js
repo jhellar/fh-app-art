@@ -1,7 +1,7 @@
 "use strict";
 
 const Template = require('./template.js');
-const config = require('../config');
+const config = require('../config/config');
 const promisify = require('promisify-node');
 const fs = promisify('fs');
 const webdriverio = require('webdriverio');

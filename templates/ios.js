@@ -8,44 +8,44 @@ const templates = [
   new SAMLTemplate(
     'SAML iOS Swift',
     'git@github.com:jhellar/saml-ios-swift.git',
-    'FH-3251',
+    'FH-3252',
     'saml_project',
     'saml-ios-swift'
   ),
   new PushTemplate(
     'Push Starter iOS Swift',
     'git@github.com:jhellar/pushstarter-ios-swift.git',
-    'FH-3233',
+    'FH-3252',
     'pushstarter_project',
     'PushStarter',
     'org.aerogear.helloworldpush',
     'org.aerogear.PushStarterUITests'
   ),
-  new IOSTemplate(
-    'Helloworld iOS Objective-C',
-    'git@github.com:jhellar/helloworld-ios.git',
-    'FH-3223',
-    'hello_world_project',
-    'helloworld-ios-app'
-  ),
+  // new IOSTemplate(
+  //   'Helloworld iOS Objective-C',
+  //   'git@github.com:jhellar/helloworld-ios.git',
+  //   'FH-3223',
+  //   'hello_world_project',
+  //   'helloworld-ios-app'
+  // ),
   new IOSTemplate(
     'Helloworld iOS Swift',
     'git@github.com:jhellar/helloworld-ios-swift.git',
-    'FH-3223',
+    'FH-3252',
     'hello_world_project',
     'helloworld-ios-app'
   ),
-  new IOSTemplate(
-    'Welcome iOS Objective-C',
-    'git@github.com:jhellar/welcome-ios.git',
-    'FH-3223',
-    'welcome_project',
-    'welcome-ios'
-  ),
+  // new IOSTemplate(
+  //   'Welcome iOS Objective-C',
+  //   'git@github.com:jhellar/welcome-ios.git',
+  //   'FH-3223',
+  //   'welcome_project',
+  //   'welcome-ios'
+  // ),
   new IOSTemplate(
     'Welcome iOS Swift',
     'git@github.com:jhellar/welcome-ios-swift.git',
-    'FH-3223',
+    'FH-3252',
     'welcome_project',
     'welcome-ios-swift'
   )

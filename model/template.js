@@ -4,11 +4,12 @@ const git = require('../utils/git');
 const fhc = require('../utils/fhc');
 const exec = require('../utils/exec');
 const rimraf = require('../utils/rimraf');
-const config = require('../config');
+const config = require('../config/config');
 const path = require('path');
 const plist = require('plist');
 const promisify = require('promisify-node');
 const fs = promisify('fs');
+const fsSync = require('fs');
 
 class Template {
 
@@ -26,6 +27,7 @@ class Template {
     this.cloudDeployTries = 0;
 
     this.prepare = this.prepare.bind(this);
+    this.importTest = this.importTest.bind(this);
     this.prepareProject = this.prepareProject.bind(this);
     this.createProject = this.createProject.bind(this);
     this.deployCloudApp = this.deployCloudApp.bind(this);
@@ -36,6 +38,7 @@ class Template {
   prepare() {
     return rimraf(this.tempFolder)
       .then(() => (git.clone(this.repoUrl, this.tempFolder, this.repoBranch)))
+      .then(this.importTest)
       .then(fhc.projectsListNoApps)
       .then(this.prepareProject)
       .then(() => (fhc.connectionsList(this.project.guid)))
@@ -61,6 +64,16 @@ class Template {
         return fs.writeFile(fhconfigPath, plist.build(fhconfig));
       })
       .then(() => (exec('pod install', this.tempFolder)));
+  }
+
+  importTest() {
+    const testFolder = path.resolve(__dirname, `../temp/${this.scheme}UITests`);
+    const files = fsSync.readdirSync(testFolder);
+    const testFile = files.find(file => (file.endsWith('.swift')));
+    const testFilePath = path.resolve(testFolder, testFile);
+    fsSync.unlinkSync(testFilePath);
+    return fs.readFile(path.resolve(__dirname, `../fixtures/ios-tests/${this.scheme}.swift`), 'utf8')
+      .then(test => (fs.writeFile(testFilePath, test)));
   }
 
   prepareProject(projects) {

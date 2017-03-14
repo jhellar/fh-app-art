@@ -2,7 +2,7 @@
 
 const fhc = require('../utils/fhc');
 const templates = require('../templates/ios');
-const config = require('../config');
+const config = require('../config/config');
 
 describe('Tests for iOS client apps', function() {
 
