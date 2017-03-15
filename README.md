@@ -14,17 +14,19 @@ iOS tests are written with XCTest. Testing of these apps is currently automated:
 
 ## Prerequisites
 
-For iOS:
-* Mac
-* Xcode
+### For iOS
+* macOS sierra
+* Xcode 8.2+
+* node 4.4 (fhc requires node version: >=0.10 <= 4.4)
+* CocoaPods 1.1.1
 
-For iOS push testing:
+## Additonal requirements for iOS push testing
 * Apple Developer Program account
 * physical device connect to your Mac
 * [fastlane tools](https://github.com/fastlane/fastlane)
 * credentials added to [fastlane CredentialsManager](https://github.com/fastlane/fastlane/tree/master/credentials_manager)
 
-For iOS SAML testing:
+## Additonal requirements for iOS SAML testing:
 * [running SAML service](https://github.com/fheng/help/blob/master/developer_guides/clientsdk/5.clientsdk_templates.md)
 * [oc tool](https://docs.openshift.com/enterprise/3.1/cli_reference/get_started_cli.html)
 * you have to be logged in to the OpenShift where SAML service is running (using `oc login ...`)
